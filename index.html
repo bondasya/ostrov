@@ -229,6 +229,12 @@ const UNITS=[
  {id:17,pages:"урок Helen Doron",title:"Garden and friends",letters:["g","p","a","b","f","c","d"],words:[["garden","сад"],["path","тропинка"],["ant","муравей"],["boy","мальчик"],["girl","девочка"],["friends","друзья"],["cat","кот"],["dog","собака"]]},
  {id:18,pages:"урок Helen Doron",title:"Animals 2",letters:["u","y","v","r","p","h","b","z"],words:[["umbrella bird","зонтичная птица"],["yak","як"],["vole","полёвка"],["rat","крыса"],["panda","панда"],["hog","кабан"],["beetle","жук"],["zebra","зебра"]]},
 {id:19,pages:"урок Helen Doron",title:"Урок 29 октября",letters:["a","e","i","o","u"],words:[["cut","резать"],["band","музыкальная группа"],["bog","болото"],["fast","быстрый"],["frog","лягушка"],["stand","стоять"],["sand","песок"],["dig","копать"],["rest","отдыхать"],["net","сетка"],["hen","курица"],["mess","беспорядок"],["mat","коврик"]]},
+ {id:20,pages:"стр. 17–20",title:"E",letters:["t","m","h","p","n","r","b","w"],words:[["ten","десять"],["men","мужчины"],["hen","курица"],["pen","ручка"],["net","сетка"],["mess","беспорядок"],["rest","отдыхать"],["nest","гнездо"],["best","лучший"],["pet","питомец"],["wet","мокрый"]]},
+ {id:21,pages:"стр. 21–23",title:"U",letters:["b","t","m","s","r","f","n"],words:[["bun","булочка"],["bus","автобус"],["tub","ванна"],["mud","грязь"],["sun","солнце"],["run","бегать"],["fun","веселье"],["mug","кружка"],["nut","орех"]]},
+ {id:22,pages:"стр. 24",title:"Y (звук «й»)",letters:["y"],words:[["yoga","йога"],["yo-yo","йо-йо"],["yes","да"],["yell","кричать"]]},
+ {id:23,pages:"стр. 25–26",title:"Y на конце (звук «и»)",letters:["h","t","y","b","f"],words:[["happy","счастливый"],["tummy","животик"],["yummy","вкусный"],["hungry","голодный"],["bunny","зайчик"],["funny","смешной"]]},
+ {id:24,pages:"урок Helen Doron",title:"Outside",letters:["t","s","g","h","p"],words:[["tree","дерево"],["sky","небо"],["sun","солнце"],["ground","земля"],["house","дом"],["garden","сад"],["path","тропинка"]]},
+ {id:25,pages:"урок Helen Doron",title:"Where? (предлоги)",letters:["i","o","u","b","d"],words:[["in","в"],["on","на"],["under","под"],["in front of","перед"],["behind","за, позади"],["up","вверх"],["down","вниз"]]},
 ];
 const SENTENCES=[
  {en:"a fat rat",ru:"толстая крыса",u:3},
@@ -238,8 +244,17 @@ const SENTENCES=[
  {en:"A hippo is on a mast.",ru:"Бегемот на мачте.",u:7},
  {en:"A mat can split.",ru:"Коврик может порваться.",u:7},
  {en:"Nat can sit.",ru:"Нат умеет сидеть.",u:7},
+ {en:"a dog in a bog",ru:"собака в болоте",u:20},
+ {en:"an ant on a hat",ru:"муравей на шляпе",u:20},
+ {en:"A pen is in a net.",ru:"Ручка в сетке.",u:20},
+ {en:"A hen is in a nest.",ru:"Курица в гнезде.",u:20},
+ {en:"a bun on a bus",ru:"булочка на автобусе",u:21},
+ {en:"a dog in the mud",ru:"собака в грязи",u:21},
+ {en:"a mug in the tub",ru:"кружка в ванне",u:21},
+ {en:"Can Nat do yoga?",ru:"Нат умеет заниматься йогой?",u:22},
+ {en:"Yes, he can.",ru:"Да, умеет.",u:22},
 ];
-const PAIRS=[["pin","pen","pan"],["hat","hut","hot"],["ship","sip","chip"],["fan","van","fun"],["bat","bad","bed"],["sit","set","sat"],["dog","dig","dug"],["cap","cup","cop"],["big","bag","bug"],["fish","fist","dish"],["pot","pat","pit"],["tin","ten","tan"],["bin","bun","ban"],["mat","met","mud"],["hill","hell","hall"],["lip","lap","lop"],["sand","send","sent"],["stop","step","stab"]];
+const PAIRS=[["nut","net","not"],["ten","tan","tin"],["bus","bas","boss"],["mud","mad","mod"],["rest","rust","raced"],["pin","pen","pan"],["hat","hut","hot"],["ship","sip","chip"],["fan","van","fun"],["bat","bad","bed"],["sit","set","sat"],["dog","dig","dug"],["cap","cup","cop"],["big","bag","bug"],["fish","fist","dish"],["pot","pat","pit"],["tin","ten","tan"],["bin","bun","ban"],["mat","met","mud"],["hill","hell","hall"],["lip","lap","lop"],["sand","send","sent"],["stop","step","stab"]];
 const ALL_WORDS=(()=>{const m=new Map();UNITS.forEach(u=>u.words.forEach(([en,ru])=>{if(m.has(en))m.get(en).us.push(u.id);else m.set(en,{en,ru,u:u.id,us:[u.id]})}));return [...m.values()]})();
 const inUnits=(w,units)=>w.us.some(x=>units.includes(x));
 const KANGI="https://www.kangiclub.com";
@@ -252,10 +267,10 @@ const DAILY=[
 ];
 function hwWords(){const h=S.homework;return h&&Array.isArray(h.words)?ALL_WORDS.filter(w=>h.words.includes(w.en)):[]}
 function questList(){const hw=hwWords();return hw.length?[{id:"hw",prog:"hd",name:"Домашка: "+(S.homework.title||"слова на сегодня"),desc:`${hw.length} слов к уроку. Выучено ${hw.filter(w=>mastered(w.en)).length} из ${hw.length}.`,hw:true},...QUESTS]:QUESTS}
-const HD=[1,2,3,4,5,6,7,8,9,10,15,16,17,18,19];
+const HD=[1,2,3,4,5,6,7,8,20,21,22,23,9,10,15,16,17,18,19,24,25];
 const PROG={hd:{name:"Helen Doron",units:HD}};
 const QUESTS=[
- {id:"tr",prog:"hd",name:"Перевод",desc:"Все слова Helen Doron: workbook стр. 2–16 и слова с уроков. Каждое слово один раз, выбираешь перевод.",units:HD,tr:true},
+ {id:"tr",prog:"hd",name:"Перевод",desc:"Все слова Helen Doron: workbook стр. 2–26 и слова с уроков. Каждое слово один раз, выбираешь перевод.",units:HD,tr:true},
  {id:"class",prog:"hd",name:"Все задания",desc:"10 разных заданий: напиши, скажи вслух, диктант, прочитай, различи звуки.",units:HD},
  {id:"hint",prog:"hd",name:"Допиши слово",desc:"Видишь перевод и первые буквы, дописываешь остальное.",units:HD,hint:true},
  {id:"speak",prog:"hd",name:"Говорю вслух",desc:"Видишь слово по-русски, говоришь по-английски и проверяешь себя.",units:HD,speak:true},
@@ -592,7 +607,7 @@ function vWords(){
   const cnt=k=>ALL_WORDS.filter(w=>inUnits(w,PROG[qprog].units)&&wState(w.en)===k).length;
   const tile=(k,cls,title,hint)=>`<button class="wtile ${cls} ${wf===k?"on":""}" data-wf="${k}"><b>${title}: ${cnt(k)}</b><span>${hint}</span></button>`;
   const show=en=>wf==="all"||wState(en)===wf;
-  const units=UNITS.filter(u=>PROG[qprog].units.includes(u.id)).map(u=>({u,ws:u.words.filter(([en])=>show(en))})).filter(x=>x.ws.length);
+  const units=UNITS.filter(u=>PROG[qprog].units.includes(u.id)).sort((x,y)=>PROG[qprog].units.indexOf(x.id)-PROG[qprog].units.indexOf(y.id)).map(u=>({u,ws:u.words.filter(([en])=>show(en))})).filter(x=>x.ws.length);
   return `<div class="grid">${Object.keys(PROG).length>1?`<div class="progtabs">${Object.entries(PROG).map(([k,v])=>`<button class="progtab ${qprog===k?"on":""}" data-prog="${k}">${v.name}</button>`).join("")}</div>`:""}<section class="card block"><h2>Мои слова: ${PROG[qprog].name}</h2>
    <div class="wtiles">
     ${tile("m","g","Знаю","2 раза подряд ответил верно")}
