@@ -235,6 +235,12 @@ const UNITS=[
  {id:23,pages:"стр. 25–26",title:"Y на конце (звук «и»)",letters:["h","t","y","b","f"],words:[["happy","счастливый"],["tummy","животик"],["yummy","вкусный"],["hungry","голодный"],["bunny","зайчик"],["funny","смешной"]]},
  {id:24,pages:"урок Helen Doron",title:"Outside",letters:["t","s","g","h","p"],words:[["tree","дерево"],["sky","небо"],["sun","солнце"],["ground","земля"],["house","дом"],["garden","сад"],["path","тропинка"]]},
  {id:25,pages:"урок Helen Doron",title:"Where? (предлоги)",letters:["i","o","u","b","d"],words:[["in","в"],["on","на"],["under","под"],["in front of","перед"],["behind","за, позади"],["up","вверх"],["down","вниз"]]},
+ {id:26,pages:"урок Helen Doron",title:"Dinosaurs",letters:["d","s","f","t","b","g","e","l"],words:[["dinosaur","динозавр"],["skeleton","скелет"],["fossil","окаменелость"],["tyrannosaurus","тираннозавр"],["brontosaurus","бронтозавр"],["triceratops","трицератопс"],["stegosaurus","стегозавр"],["giraffatitan","жирафатитан"],["diplodocus","диплодок"],["eoraptor","эораптор"],["saurolophus","завролоф"],["dig","копать"],["dig up","выкапывать"],["look for","искать"]]},
+ {id:27,pages:"урок Helen Doron",title:"Body",letters:["h","e","m","n","s","f","t"],words:[["head","голова"],["eyes","глаза"],["mouth","рот"],["nose","нос"],["ears","уши"],["hand","рука (кисть)"],["hands","руки"],["tummy","животик"],["shoulders","плечи"],["foot","ступня"],["feet","ступни"],["tooth","зуб"],["teeth","зубы"]]},
+ {id:28,pages:"урок Helen Doron",title:"OO (звук «у»)",letters:["f","s","b","m","p","h"],words:[["footprint","след ноги"],["story","история"],["soup","суп"],["book","книга"],["moon","луна"],["pop group","поп-группа"],["hood","капюшон"],["pool","бассейн"]]},
+ {id:29,pages:"урок Helen Doron",title:"Opposites (антонимы)",letters:["d","n","c","h","r","w","t","f","s","b","o","g","u"],words:[["day","день"],["night","ночь"],["cold","холодный"],["hot","горячий"],["right","правильный"],["wrong","неправильный"],["true","правдивый, настоящий"],["fake","ненастоящий, подделка"],["tiny","крошечный"],["huge","огромный"],["happy","счастливый"],["sad","грустный"],["big","большой"],["small","маленький"],["old","старый"],["new","новый"],["good","хороший"],["bad","плохой"],["up","вверх"],["down","вниз"]]},
+ {id:30,pages:"урок Helen Doron",title:"Should, belong, rhymes",letters:["s","b","m","r"],words:[["should","следует, нужно"],["belong","принадлежать"],["mouse","мышь"],["sing","петь"],["read","читать"]]},
+ {id:31,pages:"урок Helen Doron",title:"W/WH, K, IKE",letters:["w","k","p","l","b"],words:[["wombat","вомбат"],["whale","кит"],["kiss","поцелуй"],["pink","розовый"],["like","нравиться"],["bike","велосипед"]]},
 ];
 const SENTENCES=[
  {en:"a fat rat",ru:"толстая крыса",u:3},
@@ -253,8 +259,11 @@ const SENTENCES=[
  {en:"a mug in the tub",ru:"кружка в ванне",u:21},
  {en:"Can Nat do yoga?",ru:"Нат умеет заниматься йогой?",u:22},
  {en:"Yes, he can.",ru:"Да, умеет.",u:22},
+ {en:"I'm hungry. What should I do? I should eat.",ru:"Я голоден. Что мне делать? Мне нужно поесть.",u:30},
+ {en:"a mouse in a house",ru:"мышь в доме",u:30},
+ {en:"a cat in a hat",ru:"кот в шляпе",u:30},
 ];
-const PAIRS=[["nut","net","not"],["ten","tan","tin"],["bus","bas","boss"],["mud","mad","mod"],["rest","rust","raced"],["pin","pen","pan"],["hat","hut","hot"],["ship","sip","chip"],["fan","van","fun"],["bat","bad","bed"],["sit","set","sat"],["dog","dig","dug"],["cap","cup","cop"],["big","bag","bug"],["fish","fist","dish"],["pot","pat","pit"],["tin","ten","tan"],["bin","bun","ban"],["mat","met","mud"],["hill","hell","hall"],["lip","lap","lop"],["sand","send","sent"],["stop","step","stab"]];
+const PAIRS=[["pool","pull","pole"],["like","lake","lick"],["bike","bake","back"],["kiss","case","cuss"],["nut","net","not"],["ten","tan","tin"],["bus","bas","boss"],["mud","mad","mod"],["rest","rust","raced"],["pin","pen","pan"],["hat","hut","hot"],["ship","sip","chip"],["fan","van","fun"],["bat","bad","bed"],["sit","set","sat"],["dog","dig","dug"],["cap","cup","cop"],["big","bag","bug"],["fish","fist","dish"],["pot","pat","pit"],["tin","ten","tan"],["bin","bun","ban"],["mat","met","mud"],["hill","hell","hall"],["lip","lap","lop"],["sand","send","sent"],["stop","step","stab"]];
 const ALL_WORDS=(()=>{const m=new Map();UNITS.forEach(u=>u.words.forEach(([en,ru])=>{if(m.has(en))m.get(en).us.push(u.id);else m.set(en,{en,ru,u:u.id,us:[u.id]})}));return [...m.values()]})();
 const inUnits=(w,units)=>w.us.some(x=>units.includes(x));
 const KANGI="https://www.kangiclub.com";
@@ -267,7 +276,7 @@ const DAILY=[
 ];
 function hwWords(){const h=S.homework;return h&&Array.isArray(h.words)?ALL_WORDS.filter(w=>h.words.includes(w.en)):[]}
 function questList(){const hw=hwWords();return hw.length?[{id:"hw",prog:"hd",name:"Домашка: "+(S.homework.title||"слова на сегодня"),desc:`${hw.length} слов к уроку. Выучено ${hw.filter(w=>mastered(w.en)).length} из ${hw.length}.`,hw:true},...QUESTS]:QUESTS}
-const HD=[1,2,3,4,5,6,7,8,20,21,22,23,9,10,15,16,17,18,19,24,25];
+const HD=[1,2,3,4,5,6,7,8,20,21,22,23,9,10,15,16,17,18,19,24,25,26,27,28,29,30,31];
 const PROG={hd:{name:"Helen Doron",units:HD}};
 const QUESTS=[
  {id:"tr",prog:"hd",name:"Перевод",desc:"Все слова Helen Doron: workbook стр. 2–26 и слова с уроков. Каждое слово один раз, выбираешь перевод.",units:HD,tr:true},
