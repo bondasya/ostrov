@@ -126,8 +126,22 @@ function save(){try{localStorage.setItem(LS,JSON.stringify(R))}catch(e){} if(ref
   ref=db.doc("tests/artem");const sn=await ref.get();if(sn.exists){const d=JSON.parse(JSON.stringify(sn.data()));if(Array.isArray(d.attempts))R=d}else if(R.attempts.length)save();
   $("#status").textContent="Результаты общие для всех устройств";render()}catch(e){$("#status").textContent="Результаты сохраняются на этом устройстве"}})();
 
+// ---------- The test exactly as in the file (Version 1, Episodes 1–2) ----------
+const BODYPT={eye:[[116,56]],mouth:[[100,86]],shoulder:[[64,118]],hand:[[166,200]],foot:[[124,290]]};
+const FIXED={
+ rw1:()=>"BTHMFEDIGS".split("").map(L=>({q:L,a:L.toLowerCase()})),
+ rw2:()=>[["🐀","rat"],["🐈","cat"],["🐕","dog"],["🎩","hat"],["🍅","tomato"],["⛵","boat"]].map(([e,w])=>({pic:e,word:w,a:w[0]})),
+ rw3:()=>{const pr=[["bun","run"],["band","stand"],["mast","fast"],["yummy","tummy"],["cook","look"],["path","bath"],["tree","sea"],["rest","nest"],["goat","coat"],["house","mouse"]];const all=pr.map(p=>p[1]).concat(["dislike"]);return pr.map(([w,r])=>({word:w,a:r,opts:shuffle([r,...pick(all.filter(x=>x!==r),3)])}))},
+ rw4:()=>[["👄","m","ou","th"],["3️⃣","","th","ree"],["🍵","t","ea",""],["🐝","b","ee",""],["🐐","g","oa","t"],["🦶","t","oe","s"],["🐇","fa","st",""],["🧘","","y","oga"]].map(([e,pre,g,post])=>({pic:e,pre,post,a:g,word:pre+g+post})),
+ rw5:()=>{const sc=[["A fat rat is in the hat.","🐀🎩"],["Nat is ill.","🐈‍⬛🤒"],["A dog and a frog can dig.","🐕🐸⛏️"],["A wombat is on the mat.","🦫🟪"],["I like the pink drink.","🩷🥤"],["A book is on the boat.","📖⛵"],["A hippo is in the bath.","🦛🛁"],["The team can win.","👦👧🏆"],["The boat is on the sea.","⛵🌊"],["Three buses are on the road.","🚌🚌🚌"]];const pics=sc.map(x=>x[1]).concat(["🐸🟫"]);return sc.map(([t,p])=>({text:t,a:p,opts:shuffle([p,...pick(pics.filter(x=>x!==p),3)])}))},
+ rw6:()=>{const it=[["🐟","fish"],["🦫","wombat"],["🦭","seal"],["🔤","letters"],["🦴","fossil"],["🐆","jaguar"],["🎤","reporter"],["📰","newspaper"],["🧽","eraser"],["✏️","pencil"]];const box=["newspaper","seal","pencil","reporter","letters","fish","wombat","fossil","jaguar","eraser","goblin"];return it.map(([e,w])=>({pic:e,a:w,box}))},
+ rw7:()=>{const box=["tummy","mouth","eye","foot","hand","head","feet","shoulder"];return ["eye","mouth","shoulder","hand","foot"].map(w=>({svg:bodySVG(BODYPT[w]),a:w,box}))},
+ l1:()=>[["🏡🌳","This is a garden.",true],["🐕🐈‍⬛1️⃣3️⃣","The dog and the cat are counting.",true],["👺🛍️","The goblin has a bag.",true],["🐈‍⬛💃","The cat is sleeping.",false],["🦁🟤","The lion is in the mud.",true],["👣","These are fish.",false]].map(([p,t,ok])=>({pic:p,say:t,a:ok})),
+ l2:()=>[[["The cat is taking photos.","🐈‍⬛📷"],["The cat is happy.","🐈‍⬛😀"],["The cat is reading.","🐈‍⬛📖"]],[["The ant is in the pool.","🐜🏊"],["The beetle is in the pool.","🪲🏊"],["The elephant is in the pool.","🐘🏊"]],[["a footprint","👣"],["a skeleton","💀"],["a newspaper","📰"]],[["An eraser is in the bag.","🎒🧽"],["A book is in the bag.","🎒📖"],["A pencil is in the bag.","🎒✏️"]],[["The cat is happy.","🐈‍⬛😀"],["The cat is sad.","🐈‍⬛😢"],["The cat is hungry.","🐈‍⬛🤤"]],[["A tiger is in the garden.","🐅🏡"],["A hog is in the garden.","🐗🏡"],["A lion is in the garden.","🦁🏡"]]].map(g=>{const c=pick(g,1)[0];return {say:c[0],a:c[1],opts:shuffle(g.map(x=>x[1])),word:c[0]}}),
+};
 // ---------- Build items ----------
 function build(ex){
+  if(run&&run.fixed&&FIXED[ex.id]) return FIXED[ex.id]();
   switch(ex.type){
    case "letter": return pick(LETTERS,ex.n).map(L=>({q:L,a:L.toLowerCase()}));
    case "first": return pick(PICS_UNIQUE,ex.n).map(([e,w])=>({pic:e,word:w,a:w[0]}));
@@ -145,13 +159,13 @@ function build(ex){
 
 // ---------- State ----------
 let run=null; // {queue:[exIds], exIdx, items, idx, score, answered, mist, results:{}, full}
-function startRun(ids,full){run={queue:ids,qi:0,full,results:{},startedAt:new Date().toISOString()};startEx()}
+function startRun(ids,full,fixed){run={queue:ids,qi:0,full,fixed:!!fixed,results:{},startedAt:new Date().toISOString()};startEx()}
 function startEx(){const ex=EX.find(e=>e.id===run.queue[run.qi]);Object.assign(run,{ex,items:build(ex),idx:0,score:0,answered:false,mist:[],fb:"",show:false,typed:"",chosen:null});render();autoPlay()}
 function pointsPer(ex){return ex.max/ex.items_n_override||ex.max/ex.n}
 function addPoints(p,miss){run.score+=p;if(miss)run.mist.push(miss)}
 function nextItem(){if(run.idx+1<run.items.length){Object.assign(run,{idx:run.idx+1,answered:false,fb:"",show:false,typed:"",chosen:null});render();autoPlay()}else finishEx()}
 function finishEx(){const ex=run.ex;run.results[ex.id]={score:Math.round(run.score*10)/10,max:ex.max,mist:run.mist};
-  if(run.qi+1<run.queue.length){run.qi++;startEx()}else{R.attempts.push({date:new Date().toISOString(),full:run.full,results:run.results});save();run.done=true;render()}}
+  if(run.qi+1<run.queue.length){run.qi++;startEx()}else{R.attempts.push({date:new Date().toISOString(),full:run.full,fixed:run.fixed,results:run.results});save();run.done=true;render()}}
 function autoPlay(){const it=run&&!run.done&&run.items[run.idx];if(!it)return;if(run.ex.type==="tf"||run.ex.type==="lchoice")setTimeout(()=>say(it.say),400);setTimeout(()=>{const i=$("#typed");if(i)try{i.focus()}catch(e){}},60)}
 
 // ---------- Views ----------
@@ -161,8 +175,8 @@ function lv(p){return p>=80?"lv-good":p>=60?"lv-mid":"lv-bad"}
 function vHome(){
   const last=R.attempts.filter(a=>a.full).slice(-1)[0];
   return `<section class="card block"><h2>Как готовиться</h2>
-   <p class="small">Задания повторяют настоящий тест: те же 11 упражнений и те же баллы, всего 100. Слова каждый раз новые, поэтому можно тренироваться много раз. Для аудио нужен звук, для устных заданий — мама рядом.</p>
-   <div class="row"><button class="btn gold" data-full>Пробный тест целиком (около 30 минут)</button>${last?`<span class="small">Последний пробный тест: <b class="${lv(total(last))}">${total(last)} из 100</b></span>`:""}</div></section>
+   <p class="small">«Тест как в файле» — те же задания, что в присланном тесте. «Пробный тест со случайными словами» — тот же формат, но слова каждый раз другие, чтобы не заучить ответы. Всего 100 баллов. Для аудио нужен звук, для устных заданий — мама рядом.</p>
+   <div class="row"><button class="btn dia" data-file>Тест как в файле (Version 1)</button><button class="btn gold" data-full>Пробный тест со случайными словами</button>${last?`<span class="small">Последний пробный тест: <b class="${lv(total(last))}">${total(last)} из 100</b></span>`:""}</div></section>
    ${Object.entries(SEC).map(([k,name])=>`<section class="card"><h2>${name}</h2><div class="sections">${EX.filter(e=>e.sec===k).map(e=>{const b=bestOf(e.id);return `<button class="ex" data-ex="${e.id}"><span class="kind">${e.kind}</span><b>${e.name}</b><span>${e.desc}</span><span>Баллов в тесте: ${e.max}</span>${b!==null?`<span class="best">Лучший: ${b} из ${e.max}</span>`:""}</button>`}).join("")}</div></section>`).join("")}
    ${vReport()}`;
 }
@@ -179,12 +193,12 @@ function vReport(){
    <p class="small">Последний результат по каждому заданию. Зелёный — 80% и выше, жёлтый — 60–79%, красный — ниже 60%: это и нужно тренировать.</p>
    <div class="tbl"><table><thead><tr><th>Задание</th><th>Баллы</th><th>Ошибки</th></tr></thead><tbody>${rows}</tbody></table></div>
    ${mistAll.length?`<p><b>Повторить:</b> ${esc(mistAll.slice(0,40).join(", "))}</p>`:""}
-   ${fulls.length?`<h3>Пробные тесты</h3><div class="tbl"><table><thead><tr><th>Дата</th><th>Чтение и письмо /49</th><th>Аудио /12</th><th>Устно /39</th><th>Итого /100</th></tr></thead><tbody>${fulls.slice().reverse().map(a=>{const s=k=>Math.round(EX.filter(e=>e.sec===k).reduce((t,e)=>t+(a.results[e.id]?.score||0),0));return `<tr><td>${new Date(a.date).toLocaleDateString("ru-RU",{day:"numeric",month:"long"})}</td><td>${s("rw")}</td><td>${s("ls")}</td><td>${s("sp")}</td><td class="${lv(total(a))}"><b>${total(a)}</b></td></tr>`}).join("")}</tbody></table></div>`:""}
+   ${fulls.length?`<h3>Пробные тесты</h3><div class="tbl"><table><thead><tr><th>Дата</th><th>Чтение и письмо /49</th><th>Аудио /12</th><th>Устно /39</th><th>Итого /100</th></tr></thead><tbody>${fulls.slice().reverse().map(a=>{const s=k=>Math.round(EX.filter(e=>e.sec===k).reduce((t,e)=>t+(a.results[e.id]?.score||0),0));return `<tr><td>${new Date(a.date).toLocaleDateString("ru-RU",{day:"numeric",month:"long"})}${a.fixed?" · как в файле":""}</td><td>${s("rw")}</td><td>${s("ls")}</td><td>${s("sp")}</td><td class="${lv(total(a))}"><b>${total(a)}</b></td></tr>`}).join("")}</tbody></table></div>`:""}
   </section>`;
 }
 function vEx(){
   const ex=run.ex,it=run.items[run.idx],n=run.items.length;
-  const head=`<div class="qhead"><h2>${run.full?`${run.qi+1}/${run.queue.length} · `:""}${ex.name}</h2><span class="chip">${run.idx+1} / ${n}</span></div><div class="bar"><i style="width:${run.idx/n*100}%"></i></div><p class="small" style="text-align:center">${ex.desc}</p>`;
+  const head=`<div class="qhead"><h2>${run.full?`${run.qi+1}/${run.queue.length} · `:""}${ex.name}${run.fixed&&ex.sec==="sp"?" (нет в файле)":""}</h2><span class="chip">${run.idx+1} / ${n}</span></div><div class="bar"><i style="width:${run.idx/n*100}%"></i></div><p class="small" style="text-align:center">${ex.desc}</p>`;
   let body="";
   const typedBox=(ph)=>`<div class="row" style="justify-content:center"><input id="typed" class="typed ${run.answered?(run.fb==="ok"?"ok":"bad"):""}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${ph}" value="${esc(run.typed)}" ${run.answered?"disabled":""}><button class="btn" data-check ${run.answered?"disabled":""}>Проверить</button></div>`;
   const opts=(list,isPic)=>`<div class="opts">${list.map(o=>{let c="";if(run.answered){if(o===it.a)c="ok";else if(o===run.chosen)c="bad"}return `<button class="opt ${isPic?"pic2":""} ${c}" data-opt="${esc(o)}" ${run.answered?"disabled":""}>${esc(o)}</button>`}).join("")}</div>`;
@@ -224,6 +238,7 @@ function bind(v){
   const per=()=>run.ex.max/run.items.length;
   v.querySelectorAll("[data-ex]").forEach(b=>b.onclick=()=>startRun([b.dataset.ex],false));
   const f=v.querySelector("[data-full]");if(f)f.onclick=()=>startRun(EX.map(e=>e.id),true);
+  const ff=v.querySelector("[data-file]");if(ff)ff.onclick=()=>startRun(EX.map(e=>e.id),true,true);
   v.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>say(b.dataset.say));
   const q=v.querySelector("[data-quit]");if(q)q.onclick=()=>{run=null;render()};
   const h=v.querySelector("[data-home]");if(h)h.onclick=()=>{run=null;render()};
