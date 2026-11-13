@@ -118,14 +118,39 @@ let voice=null;function pickVoice(){const vs=(window.speechSynthesis&&speechSynt
 if(window.speechSynthesis){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
 function say(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=voice?voice.lang:"en-GB";if(voice)u.voice=voice;u.rate=.8;speechSynthesis.speak(u)}catch(e){}}
 
-// ---------- Storage (shared db when opened in Claude, otherwise this device) ----------
+// ---------- Storage ----------
+// GitHub: results go to the same Google Sheet as the island, under Artem's code (app "test").
+// Claude: results go to this page's shared db. Always also kept on this device.
 let R={attempts:[]}, ref=null, LS="alphaboat-test-v1";
-try{const x=JSON.parse(localStorage.getItem(LS)||"null");if(x&&Array.isArray(x.attempts))R=x}catch(e){}
-function save(){try{localStorage.setItem(LS,JSON.stringify(R))}catch(e){} if(ref) ref.set(JSON.parse(JSON.stringify(R))).catch(()=>{})}
-(async()=>{try{const db=window.claude?await window.claude.use("db"):null;if(!db){$("#status").textContent="Результаты сохраняются на этом устройстве";return}
-  ref=db.doc("tests/artem");const sn=await ref.get();if(sn.exists){const d=JSON.parse(JSON.stringify(sn.data()));if(Array.isArray(d.attempts))R=d}else if(R.attempts.length)save();
-  $("#status").textContent="Результаты общие для всех устройств";render()}catch(e){$("#status").textContent="Результаты сохраняются на этом устройстве"}})();
-
+const API_URL="https://script.google.com/macros/s/AKfycbwj7v-7yBqmpD6YxNrWmc_58nB2UFWu-wYxpv2JICSXnX8PG3ymutq3CqJrDt7JX_rE/exec", APP="test";
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}}, lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}, lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
+const DEV=(()=>{let d=lsGet("wq-device");if(!d){d="d"+Math.random().toString(36).slice(2,10)+Date.now().toString(36);lsSet("wq-device",d)}return d})();
+let ACC=null, saveT=null;
+try{const x=JSON.parse(lsGet(LS)||"null");if(x&&Array.isArray(x.attempts))R=x}catch(e){}
+const setStatus=t=>{const el=$("#status");if(el)el.textContent=t};
+function mergeAttempts(a,b){const m=new Map();[...(a||[]),...(b||[])].forEach(x=>{if(x&&x.date)m.set(x.date,x)});return [...m.values()].sort((x,y)=>x.date<y.date?-1:1)}
+function save(){lsSet(LS,JSON.stringify(R)); if(ref) ref.set(JSON.parse(JSON.stringify(R))).catch(()=>{}); if(ACC){clearTimeout(saveT);saveT=setTimeout(pushSave,800)}}
+function pushSave(){if(!ACC)return;try{fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},keepalive:true,body:JSON.stringify({code:ACC.code,device:DEV,app:APP,progress:JSON.stringify(R)})})
+  .then(r=>r.json()).then(r=>setStatus(r&&r.ok?"Сохранено в таблицу · код "+ACC.code:"Не удалось сохранить в таблицу, результаты есть на этом устройстве")).catch(()=>setStatus("Нет интернета: результаты сохранятся в таблицу позже"))}catch(e){}}
+async function apiLogin(code){
+  setStatus("Подключаюсь к таблице…");
+  let r;try{r=await (await fetch(API_URL+"?action=login&app="+APP+"&code="+encodeURIComponent(code)+"&device="+encodeURIComponent(DEV))).json()}catch(e){setStatus("Нет связи с таблицей: результаты сохраняются на этом устройстве");return false}
+  if(!r||!r.ok){const why={code:"Такого кода нет.",expired:"Срок кода закончился.",blocked:"Код отключён.",devices:"Код уже используется на максимуме устройств."}[r&&r.error]||"Сервер не ответил.";setStatus(why+" Результаты сохраняются на этом устройстве");if(r&&["code","blocked"].includes(r.error))lsDel("wq-code-test");return r||{}}
+  ACC={code:r.code||code};lsSet("wq-code-test",ACC.code);
+  let srv=null;if(r.progress){try{srv=JSON.parse(r.progress)}catch(e){}}
+  const before=(srv&&srv.attempts||[]).length;
+  R={attempts:mergeAttempts(srv&&srv.attempts,R.attempts)};lsSet(LS,JSON.stringify(R));
+  if(R.attempts.length!==before)pushSave();
+  setStatus("Результаты общие для всех устройств · код "+ACC.code);render();return true;
+}
+let needCode=false;
+(async()=>{
+  await new Promise(r=>setTimeout(r,0));
+  if(window.claude){try{const db=await window.claude.use("db");if(db){ref=db.doc("tests/artem");const sn=await ref.get();if(sn.exists){const d=JSON.parse(JSON.stringify(sn.data()));if(Array.isArray(d.attempts))R={attempts:mergeAttempts(d.attempts,R.attempts)}}else if(R.attempts.length)save();setStatus("Результаты общие для всех устройств");render();return}}catch(e){}
+    setStatus("Результаты сохраняются на этом устройстве");return}
+  const c=lsGet("wq-code-test")||lsGet("wq-code-island");
+  if(c)apiLogin(c);else{needCode=true;setStatus("Введите код, чтобы результаты сохранялись в таблицу");render()}
+})();
 // ---------- The test exactly as in the file (Version 1, Episodes 1–2) ----------
 const BODYPT={eye:[[116,56]],mouth:[[100,86]],shoulder:[[64,118]],hand:[[166,200]],foot:[[124,290]]};
 const FIXED={
@@ -172,9 +197,11 @@ function autoPlay(){const it=run&&!run.done&&run.items[run.idx];if(!it)return;if
 function render(){const v=$("#view");v.innerHTML=run?(run.done?vDone():vEx()):vHome();bind(v)}
 function bestOf(id){let b=null;R.attempts.forEach(a=>{const r=a.results[id];if(r&&(b===null||r.score>b))b=r.score});return b}
 function lv(p){return p>=80?"lv-good":p>=60?"lv-mid":"lv-bad"}
+function vCode(){return needCode&&!ACC?`<section class="card"><h2>Код Артёма</h2><p class="small">Введите код, как в острове, чтобы результаты сохранялись в таблицу и были видны с любого устройства.</p>
+  <div class="row"><input id="codeIn" class="typed" style="width:220px;font-size:1.3rem" placeholder="ABC-1234" autocapitalize="characters" value=""><button class="btn" data-code>Войти</button></div></section>`:""}
 function vHome(){
   const last=R.attempts.filter(a=>a.full).slice(-1)[0];
-  return `<section class="card block"><h2>Как готовиться</h2>
+  return `${vCode()}<section class="card block"><h2>Как готовиться</h2>
    <p class="small">«Тест как в файле» — те же задания, что в присланном тесте. «Пробный тест со случайными словами» — тот же формат, но слова каждый раз другие, чтобы не заучить ответы. Всего 100 баллов. Для аудио нужен звук, для устных заданий — мама рядом.</p>
    <div class="row"><button class="btn dia" data-file>Тест как в файле (Version 1)</button><button class="btn gold" data-full>Пробный тест со случайными словами</button>${last?`<span class="small">Последний пробный тест: <b class="${lv(total(last))}">${total(last)} из 100</b></span>`:""}</div></section>
    ${Object.entries(SEC).map(([k,name])=>`<section class="card"><h2>${name}</h2><div class="sections">${EX.filter(e=>e.sec===k).map(e=>{const b=bestOf(e.id);return `<button class="ex" data-ex="${e.id}"><span class="kind">${e.kind}</span><b>${e.name}</b><span>${e.desc}</span><span>Баллов в тесте: ${e.max}</span>${b!==null?`<span class="best">Лучший: ${b} из ${e.max}</span>`:""}</button>`}).join("")}</div></section>`).join("")}
@@ -236,6 +263,7 @@ function judge(ok,missLabel,pts){run.answered=true;run.fb=ok?"ok":"bad";addPoint
   run.fbText=ok?pick(["Отлично!","Точно!","Есть!"],1)[0]:"";render()}
 function bind(v){
   const per=()=>run.ex.max/run.items.length;
+  const cb=v.querySelector("[data-code]");if(cb)cb.onclick=async()=>{const c=($("#codeIn").value||"").trim().toUpperCase();if(!c)return;const ok=await apiLogin(c);if(ok===true){needCode=false;render()}};
   v.querySelectorAll("[data-ex]").forEach(b=>b.onclick=()=>startRun([b.dataset.ex],false));
   const f=v.querySelector("[data-full]");if(f)f.onclick=()=>startRun(EX.map(e=>e.id),true);
   const ff=v.querySelector("[data-file]");if(ff)ff.onclick=()=>startRun(EX.map(e=>e.id),true,true);
